@@ -1,97 +1,120 @@
 <?php
 
-use function PHPSTORM_META\type;
-function validat($input){
-    $data=trim($input);
-    $data=stripslashes($data);
-    $data=htmlspecialchars($data);
-    return $data;
+
+
+require_once("classes/class_user.php"); 
+$user=new user();
+if($user->auto_header_home())
+{
+    header("location: home.php");
 }
+if(isset($_POST['submit']))
+{   
+    if(!empty($_POST['username'])&&!empty($_POST['useremail'])&&!empty($_POST['userpassword']))  
+    {
+        if(filter_var($_POST['useremail'], FILTER_VALIDATE_EMAIL))          //check emill valid.
+        {
+            $user->set_username($_POST['username']);$username = $user->get_username();          //define username.
+            $user->set_useremail($_POST['useremail']);$useremail = $user->get_useremail();          //define useremail.
+            $user->set_userpassword($_POST['userpassword']);$userpassword = $user->get_userpassword();          //define userpassword.
+            
+            $userListName = $user->getData("users", "username", "username = '$username'");         //Show if username already in database
+            $countName = $userListName->rowCount();
+            
+            $userListemail = $user->getData("users", "useremail", "useremail = '$useremail'");         //Show if useremail already in database
+            $countemail = $userListemail->rowCount();
+            
 
-
-
-if (isset($_POST['register'])){
-$username=$_POST['username'];
-$password=$_POST['password'];
-$password=sha1($password);
-if (filter_var($_POST['email'],FILTER_VALIDATE_EMAIL)){
-    $email=$_POST['email'];;
+            if($countemail>0&&$countName>0)
+            {
+                $message = "Email user Name arleady register";
+            }
+            else if($countemail>0)
+            {
+                $message = "Email arleady register";
+            }
+            else if($countName)
+            {
+                $message = "Name arleady register";
+            }
+            else
+            {
+                if(!empty($_FILES['userimage']['name']))
+                {
+                    $image=$user->valid_image($_FILES,$username);
+                    if($image)
+                    {
+                        $userimage = $user->get_userimage();
+                        $user->addeData('users',"username,useremail,userpassword,userimage","'{$username}','{$useremail}','{$userpassword}','$userimage'");
+                        $message="Register completed";
+                        header("location:index.php");                             
+                    }
+                    else
+                    {
+                        echo "Cant upload this file";
+                    }
+                }
+                else
+                {
+                    $user->addeData('users',"username,useremail,userpassword","'{$username}','{$useremail}','{$userpassword}'");
+                    $message="Register completed";
+                    header("location:index.php");     
+                }
+            }
+        }
+        else
+        {
+            $message = "Invalid email format";
+        }
+    }
+    else
+    {
+        $message="Please fill the empties";         //if any fileds empty
+    }
+    if(isset($message)){echo($message);}
 }
-else{echo"you inter an invalid email";}
-$city=$_POST['country'];
-$image=$_FILES['image'];
-$image_name=$_FILES['image']['name'];
-$tmp_name=$_FILES['image']['tmp_name'];
-$array_img =explode(".",$image_name);
-$allow=['jpg','png','jpeg'];
-$exe=end($array_img);
-
-move_uploaded_file($tmp_name,"upload/image/".$_POST['username'."".$exe]);
-
-
-$username=validat($username);
-setcookie("username",$username,time()+60*60*60);
-setcookie("password",$password,time()+60*60*60);
-setcookie("email",$email,time()+60*60*60);
-setcookie("city",$city,time()+60*60*60);
-setcookie("image",$image,time()+60*60*60);
-
-}
-
-
 
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
-<html>
+
 <head>
-<title>Registration</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="lib/style.css">
+    <link rel="stylesheet" href="lib/bootstrap.min.css">
+    <link rel="shortcut icon" href="https://i.pinimg.com/originals/49/f7/25/49f725a9f2b62ea80603f3fe51289735.jpg" type="image/x-icon">
 </head>
+
 <body>
-    <center>  
-<h1>
+<div class="login">
+        <h1 class="text-center">Register</h1>
+        <form method="post" enctype="multipart/form-data">
 
-</h1>
-<form action="done.php" method="post" enctype="multipart/form-data">
-<div>
-<label for="First Name"> First Name</label>
-<input type="text"
-name="username"
-/>
-</div>    
-<div>
-    <label for="email" >Email</label>
-    <input type="email" name="email" >
-</div>
-<div>
-<label for="City">City</label> 
-    <select name="country" id="country">
-        <option value="mansoura" >mansoura</option>
-        <option value="zagaziq" >zagaziq</option>
-        <option value="cairo" >cairo</option>
-        <option value="alex" >alex</option>
-    </select>
-</div>  
-
-<div>
-<label for="password">password</label> 
-<input type="password" name="password" id="password" />
-</div> <br />
-<div>
-<label> image</label> 
-<input type="file" name="image"  />
-</div> <br />
-
-
-<div>
-<input type="submit" value="register" name="register">
-</div> 
-
-</form>
-    </center>
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-control" placeholder="Username" name="username">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="Email" class="form-control" placeholder="Username" name="useremail">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="Password" class="form-control" placeholder="Password" name="userpassword">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Image</label>
+                <input type="file" class="form-control" name="userimage">
+            </div>
+            <input type="submit" name="submit" value="Register" class="submit">
+            <a href="index.php" class="account">Already Have Account..?</a>
+        </form>
+    </div>
+    <script src="lib/bootstrap.bundle.js"></script>
 </body>
-</html>
-   
 
+</html>
